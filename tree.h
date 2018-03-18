@@ -20,7 +20,29 @@ int insertRulename(rulename *father, rulename *rule);
 /* Affiche les informations contenues dans un noeud */
 void displayRulename(rulename *rule);
 
-/* Renvoie le pointeur vers le noeud de rulename spécifiée, ou NULL si la rulename est absente */
-rulename *searchRulename(char* rulename);
+
+/* Renvoie le pointeur vers le noeud de rulename spécifiée, ou NULL si la rulename est absente.
+ * Commence la recherche à partir de search_start */
+rulename *searchRulename(char* name, rulename *search_start, rulename **prec_node);
+
+
+/* Fonction de suppression d'une rulename  :
+ * Supprime proprement le noeud associé à la rulename name ainsi que tous ses fils.
+ */
+int delRulename(char *name, rulename **root);
+
+
+
+/* Fonction de suppression récursive :
+ * Supprime proprement le noeud passé en paramètre ainsi que tous ses fils et ses voisins.
+ */
+void recursNodeDel(rulename *node);
+
+
+
+/* Fonction de suppression :
+ * Supprime proprement le noeud passé en paramètre.
+ */
+void nodeDel(rulename *node);
 
 #endif

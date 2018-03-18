@@ -14,8 +14,7 @@ typedef struct _token{
 
 /* == Prototypes == */
 
-/* Retourne un pointeur sur la racine de l'arbre construit
- 	-> Pour nous, premier élem. de la liste chaînée */
+/* Retourne un pointeur sur la racine de l'arbre construit */
 void *getRootTree();
 
 
