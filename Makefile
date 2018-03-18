@@ -2,15 +2,15 @@
 CC = gcc
 
 #Nom de l'exécutable
-BIN = 
+BIN = test_tree
 
 #Objets nécessaires à la construction de l'exécutable
-OBJECTS = main.o api.o
+OBJECTS = main.o api.o tree.o
 
 #Arguments à passer au compilateur
 CFLAGS = -g -Wall
 
-all: main.o api.o
+all: main.o api.o tree.o
 	$(CC) $(OBJECTS) -o $(BIN)
 
 main.o: main.c *.h
@@ -18,3 +18,6 @@ main.o: main.c *.h
 
 api.o: api.c *.h
 	$(CC) $(CFLAGS) -c api.c
+
+tree.o: tree.c *.h
+	$(CC) $(CFLAGS) -c tree.c
