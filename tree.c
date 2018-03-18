@@ -197,3 +197,19 @@ void nodeDel(rulename *node){
 	free(node->rulename);
 	free(node);
 }
+
+
+
+int updateRulename(rulename *node, char *n_start, int n_len){
+
+	if(node == NULL){
+		fprintf(stderr, "Erreur de mise à jour - Pas de noeud précisé.\n");
+		return FALSE;
+	}
+
+	node->start = n_start;
+	node->len = n_len;
+
+	return TRUE;
+}
+
