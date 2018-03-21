@@ -26,9 +26,13 @@ int splitRequestTarget(char *start, int len);
 
 
 /* Donne le nb de carac entre le carac de départ et le premier ' ' rencontré */
-int detectWS(char *start);
+int detectWS(char *start, int r_len);
 
 
 /* Donne le nb de carac entre le carac de départ et le premier CRLF rencontré */
-int detectCRLF(char *start);
+int detectCRLF(char *start, int r_len);
+
+
+/* Donne le nb de carac entre le carac de départ et le premier ':' rencontré */
+int detectColon(char *start, int r_len);
 #endif

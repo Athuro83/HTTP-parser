@@ -30,10 +30,15 @@ typedef struct rulename{
 
 } rulename;
 
+/* ===[ Variables globales ]=== */
+rulename *request_tree = NULL;
+
 
 /* ===[ Constantes ]=== */
 
 #define TRUE 1
 #define FALSE 0
+
+#define NOT_FOUND -1
 
 #endif

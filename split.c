@@ -4,12 +4,12 @@
 #include "split.h"
 
 
-int detectWS(char *start){
+int detectWS(char *start, int r_len){
 
 	int len = 0;
 
 	/* On avance dans la chaîne jusqu'à trouver un ' ' ou la fin de la chaîne */
-	while(*(start+len) != '\0' &&
+	while(len <= r_len &&
 	      *(start+len) != ' '){
 		len++;
 	}
@@ -19,7 +19,8 @@ int detectWS(char *start){
 		return len;
 	}
 	else{
-		return -1;
+		/* Si on a pas trouvé, on renvoie NOT_FOUND */
+		return NOT_FOUND;
 	}
 }
 
@@ -29,15 +30,39 @@ int detectCRLF(char *start){
 
 	int len = 0;
 
-	while(*(start + len) != '\0' &&
+	/* On avance dans la chaîne jusqu'à trouver un '\r\n' ou la fin de la chaîne */
+	while(len < r_len &&
 	      !(*(start+len) == '\r' && *(start+len+1) == '\n')){
 		len++;
 	}
 
-	if(*(start+len) == '\0'){
-		return -1;
+	if(len >= r_len){
+		/* Si on a pas trouvé, on renvoie NOT_FOUND */
+		return NOT_FOUND;
 	}
 	else{
+		/* On renvoie le nombre de caractères du départ jusqu'au CRLF exclu */
+		return len;
+	}
+}
+
+
+int detectColon(char *start, int r_len){
+
+	int len = 0;
+
+	/* On avance dans la chaîne jusqu'à trouver un ':' ou la fin de la chaîne */
+	while(len <= r_len &&
+	      *(start+len) != ':'){
+		len++;
+	}
+
+	if(len > r_len){
+		/* Si on a pas trouvé, on renvoie NOT_FOUND */
+		return NOT_FOUND;
+	}
+	else{
+		/* On renvoie le nombre de caractères du départ jusqu'au : exclu */
 		return len;
 	}
 }
