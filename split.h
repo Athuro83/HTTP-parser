@@ -35,4 +35,9 @@ int detectCRLF(char *start, int r_len);
 
 /* Donne le nb de carac entre le carac de départ et le premier ':' rencontré */
 int detectColon(char *start, int r_len);
+
+
+/* Permet d'enlever les espaces potentiels :
+ * Positionne le pointeur *start sur le carac de début de champ, et retourne le nb de carac du champ */
+int removeOWS(char **start, int h_len);
 #endif

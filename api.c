@@ -1,3 +1,10 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "parseur.h"
+#include "tree.h"
+#include "split.h"
 #include "api.h"
 
 
@@ -31,8 +38,12 @@ int parseur(char *req, int len){
 	/* Variables */
 	rulename *start_line = NULL,
 		 *header = NULL;
-	char *start_c;
+	char *start_c,
+	     *data_start_c,
+	     *header_name;
 	int field_len,
+	    header_name_len,
+	    data_len,
 	    headers_end = 0;
 
 
@@ -98,7 +109,48 @@ int parseur(char *req, int len){
 		if((field_len = detectCRLF(start_c, len)) <= 0){
 			headers_end = 1;
 		}
+		//Traitement d'un champ header
+		else{
+			if((header_name_len = detectColon(start_c, len)) == NOT_FOUND){
+				fprintf(stderr, "Header %*.*s non conventionnel. On passe...\n", field_len, field_len, start_c);
+				continue;
+			}
+
+			//Création du nom du header avec les infos contenues dans le champ
+			header_name = (char *) malloc((header_name_len+HEADER_SUFFIX_LEN)*sizeof(char));
+			strncpy(header_name, start_c, header_name_len);
+			strcat(header_name, "-header");
+
+			//Création du noeud père qui contient tout le header
+			header = createRulename(header_name, start_c, field_len);
+
+			//Recherche de la valeur du header
+			data_start_c = start_c + header_name_len + 1;
+			if((data_len = removeOWS(&data_start_c, field_len-(header_name_len+1))) != 0){
+				//TODO : Verif syntaxique de la valeur, en fonction du nom du header
+				
+				//Création du noeud data
+				*(header_name+header_name_len) = '\0';
+				insertRulename(header, createRulename(header_name, data_start_c, data_len));
+			}
+
+			//Libération de l'espace pour le nom du header
+			free(header_name);
+
+			//Insertion du noeud header
+			insertRulename(request_tree, header);
+		}
 
 	}while(!headers_end);
+
+
+	/* == Récupération du body s'il existe == */
+	start_c = start_c + 2;
+	//Si on a pas atteint la fin de la requête
+	if(((req + len - 1) - start_c) > 0){
+		//Création d'un noeud body
+		insertRulename(request_tree, createRulename("body", start_c, (req + len - 1) - start_c));
+	}
+	return 1;
 }
 

@@ -31,7 +31,7 @@ typedef struct rulename{
 } rulename;
 
 /* ===[ Variables globales ]=== */
-rulename *request_tree = NULL;
+extern rulename *request_tree;
 
 
 /* ===[ Constantes ]=== */
@@ -40,5 +40,7 @@ rulename *request_tree = NULL;
 #define FALSE 0
 
 #define NOT_FOUND -1
+
+#define HEADER_SUFFIX_LEN 8
 
 #endif

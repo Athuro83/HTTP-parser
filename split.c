@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "parseur.h"
 #include "split.h"
 
 
@@ -26,7 +27,7 @@ int detectWS(char *start, int r_len){
 
 
 
-int detectCRLF(char *start){
+int detectCRLF(char *start, int r_len){
 
 	int len = 0;
 
@@ -65,4 +66,28 @@ int detectColon(char *start, int r_len){
 		/* On renvoie le nombre de caractères du départ jusqu'au : exclu */
 		return len;
 	}
+}
+
+
+
+int removeOWS(char **start, int h_len){
+
+	int data_len = 0,
+	    len = 0;
+
+	/* On avance tant qu'il y a des espaces et qu'on a pas dépassé la fin du champ */
+	while(len <= h_len &&
+	      **start == ' '){
+		*start += 1;
+		len++;
+	}
+
+	/* On a trouvé le début du champ, on compte jusqu'au prochain espace ou bien la sortie du champ */
+	while(len <= h_len &&
+	      *(*start+data_len) != ' '){
+		data_len++;
+		len++;
+	}
+
+	return data_len;
 }
