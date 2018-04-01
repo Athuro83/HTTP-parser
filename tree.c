@@ -5,6 +5,8 @@
 #include "parseur.h"
 #include "tree.h"
 
+/* Déclaration de la racine de l'arbre */
+rulename *request_tree;
 
 rulename *createRulename(char *name, char *start, int len){
 

@@ -2,7 +2,7 @@
 CC = gcc
 
 #Nom de l'exécutable
-BIN = test_tree
+BIN = test_tree2
 
 #Objets nécessaires à la construction de l'exécutable
 OBJECTS = main.o api.o tree.o split.o

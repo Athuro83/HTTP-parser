@@ -10,26 +10,135 @@
 
 void *getRootTree(){
 
+	/* Renvoyer le pointeur vers la rulename HTTP-message */
+	return request_tree;
 }
 
 
-_token *searchTree(void *start, char *name){
+_Token *searchTree(void *start, char *name){
 
+	_Token *list = NULL,
+	       *new_Token = NULL;
+	_Token **end_list = &list;
+	rulename *r_node = NULL;
+
+	/*
+	if(start == NULL){
+
+		if((r_node = searchRulename(name, getRootTree(), NULL)) != NULL){
+			//Création d'un nouveau token pointant vers l'élément cherché
+			if((new_Token = (_Token *) malloc(sizeof(_Token))) == NULL){
+				fprintf(stderr, "Erreur d'allocation mémoire.\n");
+				exit(0);
+			}		
+			new_Token->node = (rulename *) r_node;
+			new_Token->next = list;
+			//Insertion en tête de liste
+			list = new_Token;
+
+		}
+	}
+	*/
+
+	/* Définition du point de départ */
+	if(start == NULL){
+		r_node = (rulename *) getRootTree();
+	}
+	else{
+		r_node = (rulename *) start;
+	}
+
+	/* Examen du noeud courant */
+	if(strcmp(r_node->rulename, name) == 0){
+
+		/* En cas de match, création d'un nouveau token */
+		if((new_Token = (_Token *) malloc(sizeof(_Token))) == NULL){
+			fprintf(stderr, "Erreur d'allocation mémoire.\n");
+			exit(0);
+		}		
+
+		/* Remplissage et intégration à la liste */
+		new_Token->node = (rulename *) r_node;
+		new_Token->next = list;
+		list = new_Token;
+		/* On fait avancer la fin de la liste */
+		end_list = &new_Token->next;
+	}
+
+	/* Examen des éventuels enfants */
+	if(r_node->child != NULL && (new_Token = searchTree(r_node->child, name)) != NULL){
+
+		/* En cas de retour d'une liste, on l'ajoute à la fin de celle déjà constituée */
+		*end_list = new_Token;
+		/* On fait avancer la fin de la liste */
+		while(new_Token != NULL){
+			new_Token = new_Token->next;
+		}
+		end_list = &new_Token;
+	}
+
+	/* Examen des éventuels voisins */
+	if(r_node->next != NULL && (new_Token = searchTree(r_node->next, name)) != NULL){
+
+		/* En cas de retour d'une liste, on l'ajoute à la fin de celle déjà constituée */
+		*end_list = new_Token;
+	}
+
+	/* Retour de la liste ainsi créée */
+	return list;
 }
 
 
 char *getElementTag(void *node, int *len){
 
+	rulename *r_node = (rulename *) node;
+
+	//Vérification du paramètre
+	if(node == NULL){
+		fprintf(stderr, "Pas de noeud passé en paramètre.\n");
+		return FALSE;
+	}
+
+	if(len != NULL){
+		//Mettre la longueur de la rulename dans len
+		*len = strlen(r_node->rulename);
+	}
+
+	return r_node->rulename;
 }
 
 
 char *getElementValue(void *node, int *len){
 
+	rulename *r_node = (rulename *) node;
+
+	//Vérification du paramètre
+	if(node == NULL){
+		fprintf(stderr, "Pas de noeud passé en paramètre.\n");
+		return FALSE;
+	}
+
+	if(len != NULL){
+		//Mettre la longueur de la valeur dans len
+		*len = r_node->len;
+	}
+
+	return r_node->start;
 }
 
 
-void purgeElement(_token **r){
+void purgeElement(_Token **r){
 
+	_Token *cur_tok = *r,
+	       *prec_tok = NULL;
+
+	while(cur_tok != NULL){		//Tant qu'il reste des tokens dans la liste
+		//On enregistre la position de l'éventuel suivant
+		prec_tok = cur_tok;
+		cur_tok = cur_tok->next;
+		//On libère l'élément courant
+		free(prec_tok);
+	}
 }
 
 
@@ -143,6 +252,10 @@ int parseur(char *req, int len){
 
 	}while(!headers_end);
 
+	if(field_len == NOT_FOUND){
+		printf("Entête incomplète.\n");
+		return -1;
+	}
 
 	/* == Récupération du body s'il existe == */
 	start_c = start_c + 2;

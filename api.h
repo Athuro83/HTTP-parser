@@ -9,7 +9,7 @@ typedef struct _token{
 	void *node;		/* Pointeur sur un noeud de l'arbre */
 	struct _token *next;	/* Pointeur sur le prochain token */
 
-} _token;
+} _Token;
 
 
 /* == Prototypes == */
@@ -20,7 +20,7 @@ void *getRootTree();
 
 /* Recherche dans l'arbre les noeuds d'étiquette égale à la chaîne passée en arg, à partir de start...
  * Si start == NULL, on commence à la racine  */
-_token *searchTree(void *start, char *name);
+_Token *searchTree(void *start, char *name);
 
 
 /* Renvoie un pointeur sur le premier carac de la rulename, et met la longueur de cette rulename dans
@@ -34,7 +34,7 @@ char *getElementValue(void *node, int *len);
 
 
 /* Supprime proprement la liste chaînée */
-void purgeElement(_token **r);
+void purgeElement(_Token **r);
 
 
 /* Appel du parseur, qui parse une chaîne req de longueur len */
