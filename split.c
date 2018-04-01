@@ -76,14 +76,14 @@ int removeOWS(char **start, int h_len){
 	    len = 0;
 
 	/* On avance tant qu'il y a des espaces et qu'on a pas dépassé la fin du champ */
-	while(len <= h_len &&
+	while(len < h_len &&
 	      **start == ' '){
 		*start += 1;
 		len++;
 	}
 
 	/* On a trouvé le début du champ, on compte jusqu'au prochain espace ou bien la sortie du champ */
-	while(len <= h_len &&
+	while(len < h_len &&
 	      *(*start+data_len) != ' '){
 		data_len++;
 		len++;

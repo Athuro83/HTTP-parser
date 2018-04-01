@@ -22,24 +22,6 @@ _Token *searchTree(void *start, char *name){
 	_Token **end_list = &list;
 	rulename *r_node = NULL;
 
-	/*
-	if(start == NULL){
-
-		if((r_node = searchRulename(name, getRootTree(), NULL)) != NULL){
-			//Création d'un nouveau token pointant vers l'élément cherché
-			if((new_Token = (_Token *) malloc(sizeof(_Token))) == NULL){
-				fprintf(stderr, "Erreur d'allocation mémoire.\n");
-				exit(0);
-			}		
-			new_Token->node = (rulename *) r_node;
-			new_Token->next = list;
-			//Insertion en tête de liste
-			list = new_Token;
-
-		}
-	}
-	*/
-
 	/* Définition du point de départ */
 	if(start == NULL){
 		r_node = (rulename *) getRootTree();
