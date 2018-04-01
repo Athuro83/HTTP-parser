@@ -128,6 +128,7 @@ int parseur(char *req, int len){
 
 	/* Variables */
 	rulename *start_line = NULL,
+		 *request_target = NULL,
 		 *header = NULL;
 	char *start_c,
 	     *data_start_c,
@@ -151,7 +152,7 @@ int parseur(char *req, int len){
 	start_c = req;	
 	if((field_len = detectWS(start_c, len)) == NOT_FOUND){
 		fprintf(stderr, "Erreur : Champ method non trouvé.\n");
-		return -1;
+		return FALSE;
 	}
 
 	//TODO : vérif syntaxique de la méthode
@@ -165,13 +166,19 @@ int parseur(char *req, int len){
 	start_c = start_c + field_len + 1;
 	if((field_len = detectWS(start_c, len)) == NOT_FOUND){
 		fprintf(stderr, "Erreur : Champ request-target non trouvé.\n");
-		return -1;
+		return FALSE;
 	}
 
+	request_target = createRulename("request-target", start_c, field_len);
 	//TODO : décomposition de la request-target
+	if(!splitLikeAsteriskForm(start_c, field_len, request_target) &&
+	   !splitLikeOriginForm(start_c, field_len, request_target)){
+		fprintf(stderr, "Erreur : Champ request-target non conforme aux découpages supportés.\n");
+		return FALSE;
+	}
 	
 	//Insertion du champ
-	insertRulename(start_line, createRulename("request-target", start_c, field_len));
+	insertRulename(start_line, request_target);
 
 	/* = Récupération de la version HTTP = */
 
@@ -179,7 +186,7 @@ int parseur(char *req, int len){
 	start_c = start_c + field_len + 1;
 	if((field_len = detectCRLF(start_c, len)) == NOT_FOUND){
 		fprintf(stderr, "Erreur : Champ HTTP-version non trouvé.\n");
-		return -1;
+		return FALSE;
 	}
 
 	//TODO : vérif syntaxique de la version HTTP
@@ -236,7 +243,7 @@ int parseur(char *req, int len){
 
 	if(field_len == NOT_FOUND){
 		printf("Entête incomplète.\n");
-		return -1;
+		return FALSE;
 	}
 
 	/* == Récupération du body s'il existe == */
@@ -246,6 +253,8 @@ int parseur(char *req, int len){
 		//Création d'un noeud body
 		insertRulename(request_tree, createRulename("body", start_c, (req + len - 1) - start_c));
 	}
-	return 1;
+
+	/* Requête parsée avec succès */
+	return TRUE;
 }
 
