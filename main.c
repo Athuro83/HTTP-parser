@@ -7,7 +7,7 @@
 /// N'ajouter aucun autre code dans ce fichier. 
 int main(int argc, char *argv[])
 {
-	char req[]="GET / HTTP/1.0\r\nHost: www.google.com\r\nTransfer-Encoding: gzip\r\n\r\n";
+	char req[]="GET http://www.google.com/ HTTP/1.0\r\nHost: www.google.com\r\nTransfer-Encoding: gzip;\ntar\r\n\r\n";
 	if (argc != 2 ) { printf("usage: %s <rulename>\n",argv[0]); return 0; }
 	if (parseur(req,strlen(req))) {
 		_Token *r,*tok; 
