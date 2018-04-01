@@ -172,7 +172,9 @@ int parseur(char *req, int len){
 	request_target = createRulename("request-target", start_c, field_len);
 	//TODO : décomposition de la request-target
 	if(!splitLikeAsteriskForm(start_c, field_len, request_target) &&
-	   !splitLikeOriginForm(start_c, field_len, request_target)){
+	   !splitLikeOriginForm(start_c, field_len, request_target) &&
+	   !splitLikeAbsoluteForm(start_c, field_len, request_target) &&
+	   !splitLikeAuthorityForm(start_c, field_len, request_target)){
 		fprintf(stderr, "Erreur : Champ request-target non conforme aux découpages supportés.\n");
 		return FALSE;
 	}
