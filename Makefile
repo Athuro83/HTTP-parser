@@ -2,7 +2,7 @@
 CC = gcc
 
 #Nom de l'exécutable
-BIN = test_tree2
+BIN = parser
 
 #Objets nécessaires à la construction de l'exécutable
 OBJECTS = main.o api.o tree.o split.o check.o
@@ -10,7 +10,7 @@ OBJECTS = main.o api.o tree.o split.o check.o
 #Arguments à passer au compilateur
 CFLAGS = -g -Wall
 
-all: main.o api.o tree.o split.o check.o
+parser: main.o api.o tree.o split.o check.o
 	$(CC) $(OBJECTS) -o $(BIN)
 
 main.o: main.c *.h
@@ -27,3 +27,6 @@ split.o: split.c *.h
 
 check.o: check.c *.h
 	$(CC) $(CFLAGS) -c check.c
+
+clean:
+	$(RM) -f $(OBJECTS)
