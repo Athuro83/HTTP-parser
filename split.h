@@ -23,6 +23,11 @@ int detectInterrogationPoint(char *start, int r_len);
 int detectArobase(char *start, int r_len);
 
 
+/* Donne le nb de carac entre le carac de départ et le premier caractère delimiteur rencontré */
+int detectDelim(char *start, int r_len, char delim);
+
+
+
 /* Permet d'enlever les espaces potentiels :
  * Positionne le pointeur *start sur le carac de début de champ, et retourne le nb de carac du champ */
 int removeOWS(char **start, int h_len);

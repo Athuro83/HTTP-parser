@@ -36,11 +36,17 @@ extern rulename *request_tree;
 
 /* ===[ Constantes ]=== */
 
-#define TRUE 1
-#define FALSE 0
+#define TRUE 			1
+#define FALSE			0
 
-#define NOT_FOUND -1
+#define NOT_FOUND 		-1
 
-#define HEADER_SUFFIX_LEN 8
+#define HEADER_SUFFIX_LEN 	8
+
+#define HTTP_VERS_LEN		8
+#define HTTP_NAME_LEN		4
+#define POS_DIGIT_1		5
+#define POS_DOT			6
+#define POS_DIGIT_2		7
 
 #endif

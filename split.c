@@ -3,6 +3,7 @@
 
 #include "parseur.h"
 #include "tree.h"
+#include "check.h"
 #include "split.h"
 
 
@@ -133,6 +134,26 @@ int detectArobase(char *start, int r_len){
 }
 
 
+int detectDelim(char *start, int r_len, char delim){
+
+	int len = 0;
+
+	/* On avance dans la chaîne jusqu'à trouver un délimiteur ou la fin de la chaîne */
+	while(len <= r_len &&
+	      *(start+len) != delim){
+		len++;
+	}
+
+	if(len > r_len){
+		/* Si on a pas trouvé, on renvoie NOT_FOUND */
+		return NOT_FOUND;
+	}
+	else{
+		/* On renvoie le nombre de caractères du départ jusqu'au delim exclu */
+		return len;
+	}
+}
+
 int removeOWS(char **start, int h_len){
 
 	int data_len = 0,
@@ -204,7 +225,12 @@ int splitLikeOriginForm(char *start, int r_len, rulename *parent_node){
 	while((segment_len = detectSlash(c_start, path_len - processed_char)) != NOT_FOUND &&
 	      processed_char < path_len){
 
-		//TODO : Vérif syntaxique des segments - Renvoyer FALSE en cas de mismatch
+		/* Vérification syntaxique des segments */
+		if(!isSegment(c_start, segment_len)){
+			recursNodeDel(origin_node);
+			recursNodeDel(path_node);
+			return FALSE;
+		}
 		
 		/* Ajout du segment à l'arbre */
 		insertRulename(path_node, createRulename("segment", c_start, segment_len));
@@ -217,7 +243,12 @@ int splitLikeOriginForm(char *start, int r_len, rulename *parent_node){
 	/* Test de la présence d'un éventuel dernier segment */
 	if(processed_char < path_len){
 
-		//TODO : Vérif syntaxique du segment
+		/* Vérification syntaxique du segment */
+		if(!isSegment(c_start, path_len - processed_char)){
+			recursNodeDel(origin_node);
+			recursNodeDel(path_node);
+			return FALSE;
+		}
 		
 		/* Ajout du segment */
 		insertRulename(path_node, createRulename("segment", c_start, path_len - processed_char));
@@ -255,12 +286,16 @@ int splitLikeAbsoluteForm(char *start, int r_len, rulename *parent_node){
 	/* Détection du scheme et du hier-part */
 	if((scheme_len = detectColon(start, path_len)) == NOT_FOUND){
 		/* En cas d'abscence de délimiteur ':', on retourne FALSE */
-		fprintf(stderr, "Erreur : Délimiteur de l'absolute-URI absent.\n");
+		//fprintf(stderr, "Erreur : Délimiteur de l'absolute-URI absent.\n");
 		recursNodeDel(absolute_node);
 		return FALSE;
 	}
 
-	//TODO : Verif syntaxique du scheme
+	/* Verification syntaxique du scheme */
+	if(!isScheme(start, scheme_len)){
+		recursNodeDel(absolute_node);
+		return FALSE;
+	}
 	
 	/* Insertion du scheme */
 	insertRulename(URI_node, createRulename("scheme", start, scheme_len));
@@ -284,7 +319,8 @@ int splitLikeAuthorityForm(char *start, int r_len, rulename *parent_node){
 	int userinfo_len,
 	    port_len;
 	rulename *authority_form_node = NULL,
-		 *authority_node = NULL;
+		 *authority_node = NULL,
+		 *host_node = NULL;
 
 	/* Création de la rulename authority-form */
 	authority_form_node = createRulename("authority-form", start, r_len);
@@ -297,16 +333,30 @@ int splitLikeAuthorityForm(char *start, int r_len, rulename *parent_node){
 	}
 
 	/* Récupération d'un éventuel champ 'port' */
-	if((port_len = recoverPort(start + userinfo_len + 1, r_len, authority_node)) == NOT_FOUND){
-		port_len = 0;
+	if((port_len = recoverPort(start + (userinfo_len == 0 ? 0 : userinfo_len + 1), r_len, authority_node)) == NOT_FOUND){
+		port_len = r_len;
 	}
 
-	/* Récupération et vérification du champ 'host' */
+	/* Récupération du champ 'host' */
+	host_node = createRulename("host", start + (userinfo_len == 0 ? 0 : userinfo_len + 1), port_len - (userinfo_len == 0 ? 0 : userinfo_len + 1));
 
-	//TODO : Split et vérif syntaxique de host
+	/* Découpage et vérification syntaxique de l'host */
+	if(isIPv4(start + (userinfo_len == 0 ? 0 : userinfo_len + 1), port_len - (userinfo_len == 0 ? 0 : userinfo_len + 1))){
+		/* C'est une IPv4 */
+		insertRulename(host_node, createRulename("IPv4address", start + (userinfo_len == 0 ? 0 : userinfo_len + 1), port_len - (userinfo_len == 0 ? 0 : userinfo_len + 1)));
+	}
+	else if(isRegname(start + (userinfo_len == 0 ? 0 : userinfo_len + 1), port_len - (userinfo_len == 0 ? 0 : userinfo_len + 1))){
+		/* C'est un reg-name */
+		insertRulename(host_node, createRulename("reg-name", start + (userinfo_len == 0 ? 0 : userinfo_len + 1), port_len - (userinfo_len == 0 ? 0 : userinfo_len + 1)));
+	}
+	else{
+		/* Ce n'est pas un champ reconnu, on retourne une erreur et on supprime proprement le noeud */
+		recursNodeDel(authority_form_node);
+		return FALSE;
+	}
 	
 	/* Insertion du champ host dans l'arbre */
-	insertRulename(authority_node, createRulename("host", start + userinfo_len + 1, r_len - port_len));
+	insertRulename(authority_node, host_node);
 
 	/* Ajout du node authority au node parent */
 	insertRulename(parent_node, authority_form_node);
@@ -324,7 +374,10 @@ int recoverQuery(char *start, int r_len, rulename *parent_node){
 		return NOT_FOUND;
 	}
 
-	//TODO : vérif syntaxique de la query
+	/* Vérification syntaxique de la query */
+	if(!isQuery(start, r_len)){
+		return FALSE;
+	}
 	
 	/* Ajout de la query à l'arbre de dérivation */
 	insertRulename(parent_node, createRulename("query", start + pre_query_len + 1, r_len - pre_query_len - 1));
@@ -343,7 +396,10 @@ int recoverUserinfo(char *start, int r_len, rulename *parent_node){
 		return NOT_FOUND;
 	}
 
-	//TODO : Vérif syntaxique de l'userinfo
+	/* Vérification syntaxique de l'userinfo */
+	if(!isUserinfo(start, r_len)){
+		return FALSE;
+	}
 	
 	/* Ajout de l'userinfo à l'arbre de dérivation */
 	insertRulename(parent_node, createRulename("userinfo", start, len));
@@ -362,7 +418,10 @@ int recoverPort(char *start, int r_len, rulename *parent_node){
 		return NOT_FOUND;
 	}
 
-	//TODO : vérif syntaxique du port
+	/* Vérification syntaxique du port */
+	if(!isPort(start, r_len)){
+		return FALSE;
+	}
 	
 	/* Ajout du port à l'arbre de dérivation */
 	insertRulename(parent_node, createRulename("port", start + len + 1, r_len - len - 1));

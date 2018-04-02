@@ -6,6 +6,7 @@
 #include "tree.h"
 #include "split.h"
 #include "api.h"
+#include "check.h"
 
 
 void *getRootTree(){
@@ -128,6 +129,7 @@ int parseur(char *req, int len){
 
 	/* Variables */
 	rulename *start_line = NULL,
+		 *request_line = NULL,
 		 *request_target = NULL,
 		 *header = NULL;
 	char *start_c,
@@ -143,8 +145,8 @@ int parseur(char *req, int len){
 	request_tree = createRulename("HTTP-message", req, len);
 
 
-	/* == Récupération de la start-line == */
-	start_line = createRulename("start-line", req, len);
+	/* == Récupération de la request-line == */
+	request_line = createRulename("request-line", req, len);
 
 	/* = Récupération de la méthode */
 
@@ -152,13 +154,23 @@ int parseur(char *req, int len){
 	start_c = req;	
 	if((field_len = detectWS(start_c, len)) == NOT_FOUND){
 		fprintf(stderr, "Erreur : Champ method non trouvé.\n");
+		/* Purge de l'arbre */
+		recursNodeDel(request_tree);
+		recursNodeDel(request_line);
 		return FALSE;
 	}
 
-	//TODO : vérif syntaxique de la méthode
+	/* Vérification syntaxique de la méthode */
+	if(!isMethod(start_c, field_len)){
+		fprintf(stderr, "Erreur : Le champ method contient des caractères illégaux.\n");
+		/* Purge de l'arbre */
+		recursNodeDel(request_tree);
+		recursNodeDel(request_line);
+		return FALSE;
+	}
 	
 	//Insertion du champ
-	insertRulename(start_line, createRulename("method", start_c, field_len));
+	insertRulename(request_line, createRulename("method", start_c, field_len));
 
 	/* = Récupération de la request-target = */
 
@@ -166,21 +178,27 @@ int parseur(char *req, int len){
 	start_c = start_c + field_len + 1;
 	if((field_len = detectWS(start_c, len)) == NOT_FOUND){
 		fprintf(stderr, "Erreur : Champ request-target non trouvé.\n");
+		/* Purge de l'arbre */
+		recursNodeDel(request_tree);
+		recursNodeDel(request_line);
 		return FALSE;
 	}
-
 	request_target = createRulename("request-target", start_c, field_len);
-	//TODO : décomposition de la request-target
+
+	/* Décomposition de la request-target */
 	if(!splitLikeAsteriskForm(start_c, field_len, request_target) &&
 	   !splitLikeOriginForm(start_c, field_len, request_target) &&
 	   !splitLikeAbsoluteForm(start_c, field_len, request_target) &&
 	   !splitLikeAuthorityForm(start_c, field_len, request_target)){
-		fprintf(stderr, "Erreur : Champ request-target non conforme aux découpages supportés.\n");
+		fprintf(stderr, "Erreur : Champ request-target non conforme.\n");
+		/* Purge de l'arbre */
+		recursNodeDel(request_tree);
+		recursNodeDel(request_line);
 		return FALSE;
 	}
 	
 	//Insertion du champ
-	insertRulename(start_line, request_target);
+	insertRulename(request_line, request_target);
 
 	/* = Récupération de la version HTTP = */
 
@@ -188,16 +206,28 @@ int parseur(char *req, int len){
 	start_c = start_c + field_len + 1;
 	if((field_len = detectCRLF(start_c, len)) == NOT_FOUND){
 		fprintf(stderr, "Erreur : Champ HTTP-version non trouvé.\n");
+		/* Purge de l'arbre */
+		recursNodeDel(request_tree);
+		recursNodeDel(request_line);
 		return FALSE;
 	}
 
-	//TODO : vérif syntaxique de la version HTTP
+	/* Vérification syntaxique de la version HTTP */
+	if(!isHTTPVers(start_c, field_len)){
+		fprintf(stderr, "Erreur : Le champ HTTP-version contient des caractères illégaux.\n");
+		/* Purge de l'arbre */
+		recursNodeDel(request_tree);
+		recursNodeDel(request_line);
+		return FALSE;
+	}
 	
 	//Insertion du champ
-	insertRulename(start_line, createRulename("HTTP-version", start_c, field_len));
+	insertRulename(request_line, createRulename("HTTP-version", start_c, field_len));
 
-	/* = Mise à jour du noeud start-line et insertion = */
-	updateRulename(start_line, req, (start_c+field_len)-req);
+	/* = Mise à jour du noeud request-line et insertion = */
+	updateRulename(request_line, req, (start_c+field_len)-req);
+	start_line = createRulename("start-line", req, (start_c+field_len)-req);
+	insertRulename(start_line, request_line);
 	insertRulename(request_tree, start_line);
 
 
