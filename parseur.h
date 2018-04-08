@@ -1,11 +1,10 @@
-/*=
+/*===================================================
  *
  * 	Fichier de définitions des structures et
  * 		variables du parseur.
  *
- *= 	
+ *=================================================== 	
  */
-
 
 #ifndef __PARSEUR_H__
 #define __PARSEUR_H__
@@ -25,8 +24,10 @@ typedef struct rulename{
 	char* start;		/* Premier caractère de la chaîne stockée */
 	int len;		/* Longueur de la chaîne stockée */
 
-	struct rulename *next; 	/* Pointeur vers la prochaine rulename de l'étage, ou NULL si dernière rulename de l'étage */
-	struct rulename *child;	/* Pointeur vers la liste des fils de cette rulename, ou NULL s'il s'agit d'une rulename terminale */
+	struct rulename *next; 	/* Pointeur vers la prochaine rulename de l'étage,
+				   ou NULL si dernière rulename de l'étage */
+	struct rulename *child;	/* Pointeur vers la liste des fils de cette rulename,
+				   ou NULL s'il s'agit d'une rulename terminale */
 
 } rulename;
 

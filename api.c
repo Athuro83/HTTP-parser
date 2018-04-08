@@ -131,7 +131,8 @@ int parseur(char *req, int len){
 	rulename *start_line = NULL,
 		 *request_line = NULL,
 		 *request_target = NULL,
-		 *header = NULL;
+		 *header = NULL,
+		 *header_data = NULL;
 	char *start_c,
 	     *data_start_c,
 	     *header_name;
@@ -161,7 +162,7 @@ int parseur(char *req, int len){
 	}
 
 	/* Vérification syntaxique de la méthode */
-	if(!isMethod(start_c, field_len)){
+	if(!isToken(start_c, field_len)){
 		fprintf(stderr, "Erreur : Le champ method contient des caractères illégaux.\n");
 		/* Purge de l'arbre */
 		recursNodeDel(request_tree);
@@ -246,6 +247,12 @@ int parseur(char *req, int len){
 				continue;
 			}
 
+			/* Détection de l'espace invalide entre le header name et le ':' */
+			if(*(start_c+header_name_len-1) == ' '){
+				//fprintf(stderr, "Espace invalide détecté ! On passe...\n");
+				continue;
+			}
+
 			//Création du nom du header avec les infos contenues dans le champ
 			header_name = (char *) malloc((header_name_len+HEADER_SUFFIX_LEN)*sizeof(char));
 			strncpy(header_name, start_c, header_name_len);
@@ -257,11 +264,42 @@ int parseur(char *req, int len){
 			//Recherche de la valeur du header
 			data_start_c = start_c + header_name_len + 1;
 			if((data_len = removeOWS(&data_start_c, field_len-(header_name_len+1))) != 0){
-				//TODO : Verif syntaxique de la valeur, en fonction du nom du header
-				
+
 				//Création du noeud data
 				*(header_name+header_name_len) = '\0';
-				insertRulename(header, createRulename(header_name, data_start_c, data_len));
+				header_data = createRulename(header_name, data_start_c, data_len);
+				insertRulename(header, header_data);
+
+				//TODO : Verif syntaxique de la valeur, en fonction du nom du header
+				if(strncmp("Host", start_c, strlen("Host")-1) == 0){
+					/* Parsing d'un header Host */
+					if(!splitHost(data_start_c, data_len, header_data)){
+						recursNodeDel(header);
+						printf("Non conforme\n");
+						continue;
+					}
+				}
+				else if(strncmp("User-Agent", start_c, strlen("User-Agent")-1) == 0){
+					/* Parsing d'un header User-Agent */
+					if(!splitUserAgent(data_start_c, data_len, header_data)){
+						recursNodeDel(header);
+						printf("UserAgent prob\n");
+						continue;
+					}
+				}
+				else if(strncmp("Connection", start_c, strlen("Connection")-1) == 0){
+					/* Parsing d'un header Connection */
+					if(!splitConnection(data_start_c, data_len, header_data)){
+						recursNodeDel(header);
+						printf("Connection prob\n");
+						continue;
+					}
+				}
+				else if(strncmp("Accept", start_c, strlen("Accept")-1) == 0){
+					/* Parsing d'un header Accept */
+				}
+
+
 			}
 
 			//Libération de l'espace pour le nom du header

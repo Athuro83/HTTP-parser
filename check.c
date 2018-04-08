@@ -154,11 +154,11 @@ int isScheme(char *start, int len){
 
 
 
-int isMethod(char *start, int len){
+int isToken(char *start, int len){
 
 	int i;
 
-	/* On vérifie que le champ contient au moyen un caractère */
+	/* On vérifie que le champ contient au moins un caractère */
 	if(len == 0){
 		return FALSE;
 	}
@@ -310,6 +310,52 @@ int isUserinfo(char *start, int len){
 		else if(*(start+offset) == ':'){
 			offset += 1;
 		}
+		else{
+			return FALSE;
+		}
+	}
+
+	/* Tous les caractères appartiennent à des listes acceptées */
+	return TRUE;
+}
+
+
+int isComment(char *start, int len, rulename *parent_node){
+
+	int offset = 0,
+	    comment_len;
+
+	while(offset < len){
+
+		/* Test quoted-pair */
+		if(*(start+offset) == 92 &&
+		   (*(start+offset) == ' ' || *(start+offset) == '\t' ||
+		   (*(start+offset) >= '!' && *(start+offset) <= '~') ||	/* Test VCHAR */
+		   (*(start+offset) >= 128 && *(start+offset) <= 255))){	/* Test obs-text */
+		   	offset += 2;
+		}
+		/* Test c-text */
+		else if(*(start+offset) == ' ' || *(start+offset) == '\t' ||
+			(*(start+offset) >= '!' && *(start+offset) <= 39) ||	/* Test %x21-27 */
+			(*(start+offset) >= '*' && *(start+offset) <= '[') ||	/* Test %x2A-5B */
+			(*(start+offset) >= ']' && *(start+offset) <= '~') ||	/* Test %x5D-7E */
+   		        (*(start+offset) >= 128 && *(start+offset) <= 255)){	/* Test obs-text */
+			offset += 1;
+		}
+		/* Test comment */
+		else if(*(start+offset) == '('){
+			/* Parenthèse fermante manquante */
+			if((comment_len = detectDelim(start+offset, len-offset, ')')) == NOT_FOUND){
+				return FALSE;
+			}
+			/* Sous-champ comment invalide */
+			if((comment_len = detectDelim(start+offset, len-offset, ')')) != NOT_FOUND &&
+			   !splitLikeComment(start+offset, len-offset, parent_node)){
+				return FALSE;
+			}
+			offset += comment_len;
+		}
+		/* Invalid char */
 		else{
 			return FALSE;
 		}

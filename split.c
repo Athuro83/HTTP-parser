@@ -7,18 +7,20 @@
 #include "split.h"
 
 
-int detectWS(char *start, int r_len){
+
+int detectOWS(char *start, int r_len){
 
 	int len = 0;
 
-	/* On avance dans la chaîne jusqu'à trouver un ' ' ou la fin de la chaîne */
+	/* On avance dans la chaîne jusqu'à trouver un ' ', une tabulation ou la fin de la chaîne */
 	while(len <= r_len &&
-	      *(start+len) != ' '){
+	      *(start+len) != ' ' &&
+	      *(start+len) != '\t'){
 		len++;
 	}
 
-	if(*(start+len) == ' '){
-		/* On renvoie le nombre de caractères du départ jusqu'à l'espace exclu */
+	if(*(start+len) == ' ' || *(start+len) == '\t'){
+		/* On renvoie le nombre de caractères du départ jusqu'à l'espace/tabulation exclu */
 		return len;
 	}
 	else{
@@ -50,89 +52,6 @@ int detectCRLF(char *start, int r_len){
 }
 
 
-int detectColon(char *start, int r_len){
-
-	int len = 0;
-
-	/* On avance dans la chaîne jusqu'à trouver un ':' ou la fin de la chaîne */
-	while(len <= r_len &&
-	      *(start+len) != ':'){
-		len++;
-	}
-
-	if(len > r_len){
-		/* Si on a pas trouvé, on renvoie NOT_FOUND */
-		return NOT_FOUND;
-	}
-	else{
-		/* On renvoie le nombre de caractères du départ jusqu'au : exclu */
-		return len;
-	}
-}
-
-
-int detectInterrogationPoint(char *start, int r_len){
-
-	int len = 0;
-
-	/* On avance dans la chaîne jusqu'à trouver un ':' ou la fin de la chaîne */
-	while(len <= r_len &&
-	      *(start+len) != '?'){
-		len++;
-	}
-
-	if(len > r_len){
-		/* Si on a pas trouvé, on renvoie NOT_FOUND */
-		return NOT_FOUND;
-	}
-	else{
-		/* On renvoie le nombre de caractères du départ jusqu'au ? exclu */
-		return len;
-	}
-}
-
-
-int detectSlash(char *start, int r_len){
-
-	int len = 0;
-
-	/* On avance dans la chaîne jusqu'à trouver un '/' ou la fin de la chaîne */
-	while(len <= r_len &&
-	      *(start+len) != '/'){
-		len++;
-	}
-
-	if(len > r_len){
-		/* Si on a pas trouvé, on renvoie NOT_FOUND */
-		return NOT_FOUND;
-	}
-	else{
-		/* On renvoie le nombre de caractères du départ jusqu'au / exclu */
-		return len;
-	}
-}
-
-
-int detectArobase(char *start, int r_len){
-
-	int len = 0;
-
-	/* On avance dans la chaîne jusqu'à trouver un '@' ou la fin de la chaîne */
-	while(len <= r_len &&
-	      *(start+len) != '@'){
-		len++;
-	}
-
-	if(len > r_len){
-		/* Si on a pas trouvé, on renvoie NOT_FOUND */
-		return NOT_FOUND;
-	}
-	else{
-		/* On renvoie le nombre de caractères du départ jusqu'à @ exclu */
-		return len;
-	}
-}
-
 
 int detectDelim(char *start, int r_len, char delim){
 
@@ -154,27 +73,32 @@ int detectDelim(char *start, int r_len, char delim){
 	}
 }
 
+
+
 int removeOWS(char **start, int h_len){
 
-	int data_len = 0,
+	int end_data = 0,
 	    len = 0;
 
-	/* On avance tant qu'il y a des espaces et qu'on a pas dépassé la fin du champ */
+	/* On avance tant qu'il y a des espaces ou des tabulations et qu'on a pas dépassé la fin du champ */
 	while(len < h_len &&
-	      **start == ' '){
+	      (**start == ' ' || **start == '\t')){
 		*start += 1;
 		len++;
 	}
 
-	/* On a trouvé le début du champ, on compte jusqu'au prochain espace ou bien la sortie du champ */
-	while(len < h_len &&
-	      *(*start+data_len) != ' '){
-		data_len++;
-		len++;
+	/* On a trouvé le début du champ, on cherche maintenant la fin en partant de la fin du champ */
+	end_data = h_len-1;
+	while(end_data > len &&
+	      (*(*start+end_data) == ' ' ||
+	      *(*start+end_data) == '\t')){
+		end_data--;
 	}
 
-	return data_len;
+	/* Renvoyer la taille du champ de données */
+	return end_data - len + 1;
 }
+
 
 
 int splitLikeAsteriskForm(char *start, int r_len, rulename *parent_node){
@@ -189,6 +113,7 @@ int splitLikeAsteriskForm(char *start, int r_len, rulename *parent_node){
 		return FALSE;
 	}
 }
+
 
 
 int splitLikeOriginForm(char *start, int r_len, rulename *parent_node){
@@ -222,7 +147,7 @@ int splitLikeOriginForm(char *start, int r_len, rulename *parent_node){
 	path_node = createRulename("absolute-path", start, path_len);
 
 	/* Boucle de vérification et récupération des segments */
-	while((segment_len = detectSlash(c_start, path_len - processed_char)) != NOT_FOUND &&
+	while((segment_len = detectDelim(c_start, path_len - processed_char, '/')) != NOT_FOUND &&
 	      processed_char < path_len){
 
 		/* Vérification syntaxique des segments */
@@ -284,7 +209,7 @@ int splitLikeAbsoluteForm(char *start, int r_len, rulename *parent_node){
 	}
 
 	/* Détection du scheme et du hier-part */
-	if((scheme_len = detectColon(start, path_len)) == NOT_FOUND){
+	if((scheme_len = detectDelim(start, path_len, ':')) == NOT_FOUND){
 		/* En cas d'abscence de délimiteur ':', on retourne FALSE */
 		//fprintf(stderr, "Erreur : Délimiteur de l'absolute-URI absent.\n");
 		recursNodeDel(absolute_node);
@@ -370,7 +295,7 @@ int recoverQuery(char *start, int r_len, rulename *parent_node){
 	int pre_query_len;
 
 	/* Si on ne trouve pas de délimiteur '?', on s'arrête */
-	if((pre_query_len = detectInterrogationPoint(start, r_len)) == NOT_FOUND){
+	if((pre_query_len = detectDelim(start, r_len, '?')) == NOT_FOUND){
 		return NOT_FOUND;
 	}
 
@@ -392,7 +317,7 @@ int recoverUserinfo(char *start, int r_len, rulename *parent_node){
 	int len;
 
 	/* Si on ne trouve pas de délimiteur '@', on s'arrête */
-	if((len = detectArobase(start, r_len)) == NOT_FOUND){
+	if((len = detectDelim(start, r_len, '@')) == NOT_FOUND){
 		return NOT_FOUND;
 	}
 
@@ -414,7 +339,7 @@ int recoverPort(char *start, int r_len, rulename *parent_node){
 	int len;
 
 	/* Si on ne trouve pas de délimiteur ':', on s'arrête */
-	if((len = detectColon(start, r_len)) == NOT_FOUND){
+	if((len = detectDelim(start, r_len, ':')) == NOT_FOUND){
 		return NOT_FOUND;
 	}
 
@@ -428,4 +353,191 @@ int recoverPort(char *start, int r_len, rulename *parent_node){
 
 	/* Renvoyer le nombre de caractères entre le caractère de départ et le délimiteur */
 	return len;
+}
+
+
+int splitHost(char *start, int r_len, rulename *parent_node){
+
+	int len;
+
+	/* Détection et ajout d'un éventuel port */
+	if((len = recoverPort(start, r_len, parent_node)) == NOT_FOUND){
+		len = r_len;
+	}
+
+	/* Vérification syntaxique de l'host */
+	if(!isIPv4(start, len) &&
+	   !isRegname(start, len)){
+		return FALSE;
+	}
+
+	/* Ajout du noeud */
+	insertRulename(parent_node, createRulename("uri-host", start, len));
+
+	return TRUE;
+}
+
+
+
+int splitConnection(char *start, int r_len, rulename *parent_node){
+
+	int len,
+	    field_len,
+	    next_WS,
+	    next_comma,
+	    processed_len = 0;
+	char *field_start = start;
+
+	/* Détection du motif *(',' OWS) */
+	while((len = detectDelim(field_start, r_len - processed_len, ',') == 0)){
+		field_start += 1;
+		removeOWS(&field_start, r_len - (processed_len + 1));
+		processed_len = field_start - start;
+	}
+
+	/* Récupération et vérification du premier champ d'option */
+
+	/* Trouver la fin du champ */
+	next_WS = detectOWS(field_start, r_len - processed_len);
+	next_comma = detectDelim(field_start, r_len - processed_len, ',');
+	if(next_WS == NOT_FOUND && next_comma == NOT_FOUND){
+		field_len = r_len - processed_len;
+	}
+	else if(next_WS == NOT_FOUND){
+		field_len = next_comma;
+	}
+	else if(next_comma == NOT_FOUND){
+		field_len = next_WS;
+	}
+	else{
+		field_len = (next_WS < next_comma) ? next_WS : next_comma;
+	}
+
+	/* Vérification syntaxique du champ */
+	if(!isToken(field_start, field_len)){
+		return FALSE;
+	}
+
+	/* Ajout du noeud */
+	insertRulename(parent_node, createRulename("connection-option", field_start, field_len));
+
+	/* Récupération et vérification de champs supplémentaires */
+	while(processed_len < r_len &&
+	      next_comma != NOT_FOUND){
+
+		/* Passage au champ suivant */
+		field_start += next_comma;
+		processed_len += next_comma;
+
+		/* Détection du motif *(',' OWS) */
+		while((len = detectDelim(field_start, r_len - processed_len, ',') == 0)){
+			field_start += 1;
+			removeOWS(&field_start, r_len - (processed_len + 1));
+			processed_len = field_start - start;
+		}
+
+		/* Récupération et vérification du champ d'option */
+
+		/* Trouver la fin du champ */
+		next_WS = detectOWS(field_start, r_len - processed_len);
+		next_comma = detectDelim(field_start, r_len - processed_len, ',');
+		if(next_WS == NOT_FOUND && next_comma == NOT_FOUND){
+			field_len = r_len - processed_len;
+		}
+		else if(next_WS == NOT_FOUND){
+			field_len = next_comma;
+		}
+		else if(next_comma == NOT_FOUND){
+			field_len = next_WS;
+		}
+		else{
+			field_len = (next_WS < next_comma) ? next_WS : next_comma;
+		}
+
+		/* Vérification syntaxique du champ */
+		if(isToken(field_start, field_len)){
+			insertRulename(parent_node, createRulename("connection-option", field_start, field_len));
+		}
+
+	}
+	return TRUE;
+}
+
+
+
+int splitUserAgent(char *start, int r_len, rulename *parent_node){
+
+	int processed_len = 0,
+	    field_len;
+	char *field_start = start;
+
+	while(processed_len < r_len){
+		
+		/* On se place au début du champ */
+		removeOWS(&field_start, r_len - processed_len);
+		processed_len = field_start - start;
+		/* On cherche la taille du champ */
+		if((field_len = detectDelim(field_start, r_len - processed_len, ' ')) == NOT_FOUND){
+			field_len = r_len - processed_len;
+		}
+
+		/* Vérification du champ */
+		if(!splitLikeComment(field_start, field_len, parent_node) &&
+		   !splitLikeProduct(field_start, field_len, parent_node)){
+			return FALSE;
+		}
+
+		/* Passer au champ suivant */
+		field_start += field_len;
+		processed_len += field_len;
+	}
+
+	return TRUE;
+}
+
+
+int splitLikeProduct(char *start, int r_len, rulename *parent_node){
+
+	int len,
+	    product_vers_ok = 0;
+
+	/* Récupération d'une éventuelle product-version */
+	if((len = detectDelim(start, r_len, '/')) != NOT_FOUND &&
+	   isToken(start + len + 1, r_len - (len+1))){
+		product_vers_ok = 1;
+	    
+	}
+	else{
+		len = r_len;
+	}
+
+	/* Vérification syntaxique du produit */
+	if(!isToken(start, len)){
+		printf("Product %.*s not token\n", len, start);
+		return FALSE;
+	}
+
+	/* Insertion des noeuds dans l'arbre */
+	insertRulename(parent_node, createRulename("product", start, len));
+	if(product_vers_ok){
+		insertRulename(parent_node, createRulename("product-version", start+len+1, r_len-(len+1)));
+	}
+
+	return TRUE;
+}
+
+
+
+int splitLikeComment(char *start, int r_len, rulename *parent_node){
+
+	/* Vérif syntaxique */
+	if(*start != '(' || *(start+r_len-1) != ')' ||
+	   !isComment(start+1, r_len-2, parent_node)){
+		return FALSE;
+	}
+
+	/* Insertion du noeud dans l'arbre */
+	insertRulename(parent_node, createRulename("comment", start, r_len));
+
+	return TRUE;
 }
